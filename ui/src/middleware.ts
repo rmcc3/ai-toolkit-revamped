@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// if route starts with these, approve
-const publicRoutes = ['/api/img/', '/api/files/'];
+// public unauthenticated API routes (GET-only media serving)
+const publicGetRoutes = ['/api/img/'];
 
 export function middleware(request: NextRequest) {
   // check env var for AI_TOOLKIT_AUTH, if not set, approve all requests
@@ -16,8 +16,8 @@ export function middleware(request: NextRequest) {
   // Get the token from the headers
   const token = request.headers.get('Authorization')?.split(' ')[1];
 
-  // allow public routes to pass through
-  if (publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
+  // allow only safe public GET routes to pass through
+  if (request.method === 'GET' && publicGetRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
