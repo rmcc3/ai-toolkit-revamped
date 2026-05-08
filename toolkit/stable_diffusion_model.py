@@ -376,9 +376,10 @@ class StableDiffusion:
                 transformer_path = os.path.join(transformer_path, 'transformer')
                 # check if the path is a full checkpoint.
                 te_folder_path = os.path.join(model_path, 'text_encoder')
-                # if we have the te, this folder is a full checkpoint, use it as the base
+                # if this is a full checkpoint we still keep base components pinned
+                # to the configured base model to avoid loading untrusted local weights.
                 if os.path.exists(te_folder_path):
-                    base_model_path = model_path
+                    self.print_and_status_update("Detected full local Flux checkpoint; loading base components from configured base model for safety")
             else:
                 # is remote use whatever path we were given
                 base_model_path = model_path
@@ -405,9 +406,9 @@ class StableDiffusion:
             else:
                 transformer.to(self.device_torch, dtype=dtype)
                 
-            scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(base_model_path, subfolder="scheduler")
+            scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(base_model_path, subfolder="scheduler", use_safetensors=True)
             print_acc("Loading vae")
-            vae = AutoencoderKL.from_pretrained(base_model_path, subfolder="vae", torch_dtype=dtype)
+            vae = AutoencoderKL.from_pretrained(base_model_path, subfolder="vae", torch_dtype=dtype, use_safetensors=True)
             flush()
             
             print_acc("Loading t5")
@@ -634,9 +635,10 @@ class StableDiffusion:
                 transformer_path = os.path.join(transformer_path, 'transformer')
                 # check if the path is a full checkpoint.
                 te_folder_path = os.path.join(model_path, 'text_encoder')
-                # if we have the te, this folder is a full checkpoint, use it as the base
+                # if this is a full checkpoint we still keep base components pinned
+                # to the configured base model to avoid loading untrusted local weights.
                 if os.path.exists(te_folder_path):
-                    base_model_path = model_path
+                    self.print_and_status_update("Detected full local Flux checkpoint; loading base components from configured base model for safety")
 
             transformer = FluxTransformer2DModel.from_pretrained(
                 transformer_path,
@@ -778,18 +780,18 @@ class StableDiffusion:
 
             flush()
 
-            scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(base_model_path, subfolder="scheduler")
+            scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(base_model_path, subfolder="scheduler", use_safetensors=True)
             self.print_and_status_update("Loading VAE")
             if self.model_config.vae_path is not None:
                 vae = load_vae(self.model_config.vae_path, dtype)
             else:
-                vae = AutoencoderKL.from_pretrained(base_model_path, subfolder="vae", torch_dtype=dtype)
+                vae = AutoencoderKL.from_pretrained(base_model_path, subfolder="vae", torch_dtype=dtype, use_safetensors=True)
             flush()
             
             self.print_and_status_update("Loading T5")
-            tokenizer_2 = T5TokenizerFast.from_pretrained(base_model_path, subfolder="tokenizer_2", torch_dtype=dtype)
+            tokenizer_2 = T5TokenizerFast.from_pretrained(base_model_path, subfolder="tokenizer_2", torch_dtype=dtype, use_safetensors=True)
             text_encoder_2 = T5EncoderModel.from_pretrained(base_model_path, subfolder="text_encoder_2",
-                                                            torch_dtype=dtype)
+                                                            torch_dtype=dtype, use_safetensors=True)
 
             text_encoder_2.to(self.device_torch, dtype=dtype)
             flush()
@@ -801,8 +803,8 @@ class StableDiffusion:
                 flush()
                 
             self.print_and_status_update("Loading CLIP")
-            text_encoder = CLIPTextModel.from_pretrained(base_model_path, subfolder="text_encoder", torch_dtype=dtype)
-            tokenizer = CLIPTokenizer.from_pretrained(base_model_path, subfolder="tokenizer", torch_dtype=dtype)
+            text_encoder = CLIPTextModel.from_pretrained(base_model_path, subfolder="text_encoder", torch_dtype=dtype, use_safetensors=True)
+            tokenizer = CLIPTokenizer.from_pretrained(base_model_path, subfolder="tokenizer", torch_dtype=dtype, use_safetensors=True)
             text_encoder.to(self.device_torch, dtype=dtype)
 
             self.print_and_status_update("Making pipe")
@@ -848,9 +850,10 @@ class StableDiffusion:
                 transformer_path = os.path.join(transformer_path, 'transformer')
                 # check if the path is a full checkpoint.
                 te_folder_path = os.path.join(model_path, 'text_encoder')
-                # if we have the te, this folder is a full checkpoint, use it as the base
+                # if this is a full checkpoint we still keep base components pinned
+                # to the configured base model to avoid loading untrusted local weights.
                 if os.path.exists(te_folder_path):
-                    base_model_path = model_path
+                    self.print_and_status_update("Detected full local Flux checkpoint; loading base components from configured base model for safety")
 
             transformer = Lumina2Transformer2DModel.from_pretrained(
                 transformer_path,
@@ -885,9 +888,9 @@ class StableDiffusion:
 
             flush()
 
-            scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(base_model_path, subfolder="scheduler")
+            scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(base_model_path, subfolder="scheduler", use_safetensors=True)
             self.print_and_status_update("Loading vae")
-            vae = AutoencoderKL.from_pretrained(base_model_path, subfolder="vae", torch_dtype=dtype)
+            vae = AutoencoderKL.from_pretrained(base_model_path, subfolder="vae", torch_dtype=dtype, use_safetensors=True)
             flush()
             
             if self.model_config.te_name_or_path is not None:
