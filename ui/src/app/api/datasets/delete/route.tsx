@@ -7,8 +7,23 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { name } = body;
+    if (typeof name !== 'string' || name.trim() === '') {
+      return NextResponse.json({ error: 'Invalid dataset name' }, { status: 400 });
+    }
+
     let datasetsPath = await getDatasetsRoot();
-    let datasetPath = path.join(datasetsPath, name);
+    const datasetsRootPath = path.resolve(datasetsPath);
+    const datasetPath = path.resolve(datasetsRootPath, name);
+    const relativePath = path.relative(datasetsRootPath, datasetPath);
+
+    if (
+      relativePath === '' ||
+      relativePath === '.' ||
+      relativePath.startsWith('..') ||
+      path.isAbsolute(relativePath)
+    ) {
+      return NextResponse.json({ error: 'Invalid dataset name' }, { status: 400 });
+    }
 
     // if folder doesnt exist, ignore
     if (!fs.existsSync(datasetPath)) {
