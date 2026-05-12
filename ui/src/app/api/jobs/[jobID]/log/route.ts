@@ -31,12 +31,16 @@ export async function GET(request: NextRequest, { params }: { params: { jobID: s
     }
 
     const { size } = await fs.promises.stat(logPath);
-    const fileHandle = await fs.promises.open(logPath, 'r');
     const bytesToRead = Math.min(size, MAX_LOG_BYTES);
     const buffer = Buffer.alloc(bytesToRead);
     const start = Math.max(0, size - bytesToRead);
-    await fileHandle.read(buffer, 0, bytesToRead, start);
-    await fileHandle.close();
+    let fileHandle: fs.promises.FileHandle | undefined;
+    try {
+      fileHandle = await fs.promises.open(logPath, 'r');
+      await fileHandle.read(buffer, 0, bytesToRead, start);
+    } finally {
+      await fileHandle?.close();
+    }
 
     const log = buffer.toString('utf-8');
     return NextResponse.json({ log });
