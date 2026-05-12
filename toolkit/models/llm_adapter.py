@@ -24,6 +24,20 @@ LLM = Union[Qwen2Model, LlamaModel]
 LLMTokenizer = Union[Qwen2Tokenizer, LlamaTokenizer]
 
 
+def _validate_num_cloned_blocks(num_cloned_blocks: Any, available_blocks: int) -> int:
+    if isinstance(num_cloned_blocks, bool) or not isinstance(num_cloned_blocks, int):
+        raise ValueError(
+            f"num_cloned_blocks must be an integer, got {num_cloned_blocks!r}"
+        )
+
+    if num_cloned_blocks < 0 or num_cloned_blocks > available_blocks:
+        raise ValueError(
+            f"num_cloned_blocks must be between 0 and {available_blocks}, got {num_cloned_blocks}"
+        )
+
+    return num_cloned_blocks
+
+
 def new_context_embedder_forward(self, x):
     if self._adapter_ref().is_active:
         x = self._context_embedder_ref()(x)
@@ -86,19 +100,9 @@ class LLMAdapter(torch.nn.Module):
 
         if sd.is_flux:
             available_blocks = len(sd.unet.transformer_blocks)
-            try:
-                parsed_num_cloned_blocks = int(num_cloned_blocks)
-            except (TypeError, ValueError):
-                raise ValueError(
-                    f"num_cloned_blocks must be an integer, got {num_cloned_blocks!r}"
-                )
-
-            if parsed_num_cloned_blocks < 0 or parsed_num_cloned_blocks > available_blocks:
-                raise ValueError(
-                    f"num_cloned_blocks must be between 0 and {available_blocks}, got {parsed_num_cloned_blocks}"
-                )
-
-            self.num_cloned_blocks = parsed_num_cloned_blocks
+            self.num_cloned_blocks = _validate_num_cloned_blocks(
+                num_cloned_blocks, available_blocks
+            )
             self.apply_embedding_mask = True
             self.context_embedder = nn.Linear(
                 self.hidden_size, sd.unet.inner_dim)
