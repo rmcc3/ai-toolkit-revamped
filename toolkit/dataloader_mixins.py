@@ -542,6 +542,25 @@ class ImageProcessingDTOMixin:
             # Get video properties
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             video_fps = cap.get(cv2.CAP_PROP_FPS)
+
+            # Guardrails for user-supplied/metadata-driven frame selection.
+            max_total_frames = 1_000_000
+            max_dataset_fps = 240
+            max_auto_num_frames = 4_097
+            if total_frames <= 0:
+                raise Exception(f"Invalid video frame count ({total_frames}) for {self.path}")
+            if total_frames > max_total_frames:
+                raise Exception(
+                    f"Video has too many frames ({total_frames}). Maximum supported is {max_total_frames}."
+                )
+            if not video_fps or video_fps <= 0:
+                raise Exception(f"Invalid video FPS ({video_fps}) for {self.path}")
+            if self.dataset_config.fps <= 0:
+                raise Exception(f"Invalid dataset FPS ({self.dataset_config.fps}). FPS must be > 0.")
+            if self.dataset_config.fps > max_dataset_fps:
+                raise Exception(
+                    f"Configured FPS is too high ({self.dataset_config.fps}). Maximum supported is {max_dataset_fps}."
+                )
             
             # Calculate the max valid frame index (accounting for zero-indexing)
             max_frame_index = total_frames - 1
@@ -567,6 +586,15 @@ class ImageProcessingDTOMixin:
                 # TODO, all models currently add a key frame, but future models may not, update here if this changes.
                 desired_num_frames += 1  # add one for the key frame that is always added
                 
+                if desired_num_frames <= 1:
+                    raise Exception(
+                        f"Computed frame count ({desired_num_frames}) is invalid for auto_frame_count on {self.path}"
+                    )
+                if desired_num_frames > max_auto_num_frames:
+                    raise Exception(
+                        f"Computed frame count ({desired_num_frames}) exceeds maximum supported ({max_auto_num_frames})"
+                    )
+
                 self.num_frames = desired_num_frames
                 
             
