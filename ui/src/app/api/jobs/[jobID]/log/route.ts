@@ -35,14 +35,16 @@ export async function GET(request: NextRequest, { params }: { params: { jobID: s
     const buffer = Buffer.alloc(bytesToRead);
     const start = Math.max(0, size - bytesToRead);
     let fileHandle: fs.promises.FileHandle | undefined;
+    let bytesRead = 0;
     try {
       fileHandle = await fs.promises.open(logPath, 'r');
-      await fileHandle.read(buffer, 0, bytesToRead, start);
+      const readResult = await fileHandle.read(buffer, 0, bytesToRead, start);
+      bytesRead = readResult.bytesRead;
     } finally {
       await fileHandle?.close();
     }
 
-    const log = buffer.toString('utf-8');
+    const log = buffer.subarray(0, bytesRead).toString('utf-8');
     return NextResponse.json({ log });
   } catch (error) {
     console.error('Error reading log file:', error);
