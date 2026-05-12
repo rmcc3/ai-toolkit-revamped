@@ -59,7 +59,6 @@ class LLMAdapter(torch.nn.Module):
         self.sd_ref: weakref.ref = weakref.ref(sd)
         self.llm_ref: weakref.ref = weakref.ref(llm)
         self.tokenizer_ref: weakref.ref = weakref.ref(tokenizer)
-        self.num_cloned_blocks = num_cloned_blocks
         self.apply_embedding_mask = False
         # make sure we can pad
         if tokenizer.pad_token is None:
@@ -86,6 +85,20 @@ class LLMAdapter(torch.nn.Module):
         blocks = []
 
         if sd.is_flux:
+            available_blocks = len(sd.unet.transformer_blocks)
+            try:
+                parsed_num_cloned_blocks = int(num_cloned_blocks)
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f"num_cloned_blocks must be an integer, got {num_cloned_blocks!r}"
+                )
+
+            if parsed_num_cloned_blocks < 0 or parsed_num_cloned_blocks > available_blocks:
+                raise ValueError(
+                    f"num_cloned_blocks must be between 0 and {available_blocks}, got {parsed_num_cloned_blocks}"
+                )
+
+            self.num_cloned_blocks = parsed_num_cloned_blocks
             self.apply_embedding_mask = True
             self.context_embedder = nn.Linear(
                 self.hidden_size, sd.unet.inner_dim)
